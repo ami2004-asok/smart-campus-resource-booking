@@ -1,3 +1,4 @@
+
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -12,6 +13,10 @@ import bookingRoutes from './routes/bookingRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 
 const app = express();
+
+// ─── Proxy Configuration ─────────────────────────────────────────────────────
+// Trust the single reverse proxy in front of the application (Render).
+app.set('trust proxy', 1);
 
 // ─── Security Middleware ─────────────────────────────────────────────────────
 app.use(helmet());
@@ -30,15 +35,22 @@ app.use(cookieParser());
 // ─── Rate Limiting ───────────────────────────────────────────────────────────
 app.use('/api', generalLimiter);
 
-// ─── Health & Public Lookups ────────────────────────────────────────────────
+// ─── Health & Public Lookups ─────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: 'CUSAT Resource Booking API is running', timestamp: new Date() });
+  res.json({
+    success: true,
+    message: 'CUSAT Resource Booking API is running',
+    timestamp: new Date()
+  });
 });
 
 app.get('/api/departments', async (req, res, next) => {
   try {
     const Department = (await import('./models/Department.js')).default;
-    const departments = await Department.find({ isActive: true }).select('name code description').sort({ name: 1 });
+    const departments = await Department.find({ isActive: true })
+      .select('name code description')
+      .sort({ name: 1 });
+
     res.json({ success: true, departments });
   } catch (err) {
     next(err);
@@ -53,7 +65,10 @@ app.use('/api/admin', adminRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {
-  res.status(404).json({ success: false, message: `Route ${req.method} ${req.path} not found` });
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.method} ${req.path} not found`
+  });
 });
 
 // ─── Error Handler ───────────────────────────────────────────────────────────
