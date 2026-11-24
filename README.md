@@ -203,6 +203,7 @@ All variables are in `backend/.env`. Copy from `backend/.env.example`.
 |---|---|---|
 | `MONGODB_URI` | MongoDB Atlas connection string | ? Yes |
 | `JWT_SECRET` | Long random string for signing JWTs | ? Yes |
+| `RESEND_API_KEY` | Resend API key; preferred for hosted deployments | For emails |
 | `SMTP_HOST` | SMTP server host (default: smtp.gmail.com) | For emails |
 | `SMTP_PORT` | SMTP port (default: 587) | For emails |
 | `SMTP_USER` | Gmail address | For emails |
@@ -212,6 +213,11 @@ All variables are in `backend/.env`. Copy from `backend/.env.example`.
 | `INSTITUTION_EMAIL_DOMAINS` | Allowed student email domains | Optional |
 | `OTP_EXPIRY_MINUTES` | OTP validity window (default: 10) | Optional |
 | `NODE_ENV` | `development` or `production` | Optional |
+
+For hosted deployments such as Render, configure `RESEND_API_KEY` and set
+`EMAIL_FROM` to a sender address verified with Resend. The API integration is
+preferred over SMTP, which may be unavailable from some hosting providers. Keep
+the API key in the hosting provider's environment settings; never commit it.
 
 ---
 

@@ -39,13 +39,37 @@ async function getTransporter() {
     console.log('⚠️  Email: No SMTP configured. Using Ethereal (fake email) for development.');
     console.log(`   Ethereal user: ${etherealAccount.user}`);
   } else {
-    throw new Error('SMTP credentials are required in production. Configure SMTP_HOST, SMTP_USER, and SMTP_PASS in .env');
+    throw new Error(
+      'Email credentials are required in production. Configure RESEND_API_KEY or SMTP_HOST, SMTP_USER, and SMTP_PASS.'
+    );
   }
 
   return transporter;
 }
 
 async function sendMail(options) {
+  if (config.email.resendApiKey) {
+    console.log('✅ Email: Using Resend API');
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.email.resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: config.email.from,
+        ...options,
+      }),
+    });
+
+    if (!response.ok) {
+      const details = await response.text();
+      throw new Error(`Email delivery failed (Resend ${response.status}): ${details}`);
+    }
+
+    return response.json();
+  }
+
   const t = await getTransporter();
   const info = await t.sendMail({
     from: config.email.from,

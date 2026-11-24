@@ -30,6 +30,13 @@ function signJwt(userId) {
   });
 }
 
+async function releaseOtpCooldown(challenge) {
+  await VerificationChallenge.updateOne(
+    { _id: challenge._id, lastSentAt: challenge.lastSentAt },
+    { $set: { lastSentAt: new Date(0) } }
+  );
+}
+
 // ─── Registration ────────────────────────────────────────────────────────────
 
 export async function initiateRegistration({ name, studentId, email, password }) {
@@ -103,14 +110,11 @@ export async function initiateRegistration({ name, studentId, email, password })
 
   // 5. Generate OTP and store hashed along with staged registration metadata
   const otp = generateNumericOtp(6);
-  if (process.env.DEV_LOG_OTP === 'true') {
-  console.log(`[DEV OTP] ${normalizedEmail}: ${otp}`);
-}
   const tokenHash = VerificationChallenge.hashToken(otp);
   const expiresAt = new Date(Date.now() + config.otp.expiryMinutes * 60 * 1000);
 
   // Note: Account is NOT created yet. Staged metadata is stored in the challenge.
-  await VerificationChallenge.findOneAndUpdate(
+  const challenge = await VerificationChallenge.findOneAndUpdate(
     { email: normalizedEmail, type: 'EMAIL_VERIFICATION' },
     {
       tokenHash,
@@ -129,10 +133,15 @@ export async function initiateRegistration({ name, studentId, email, password })
     { upsert: true, new: true }
   );
 
- if (process.env.DEV_LOG_OTP === 'true') {
+ if (config.devLogOtp) {
   console.log(`[DEV OTP] ${normalizedEmail}: ${otp}`);
 } else {
-  await sendOtpEmail(normalizedEmail, otp, name);
+  try {
+    await sendOtpEmail(normalizedEmail, otp, name);
+  } catch (error) {
+    await releaseOtpCooldown(challenge);
+    throw error;
+  }
 }
 
   return {
@@ -231,22 +240,24 @@ export async function resendOtp({ email }) {
   }
 
   const otp = generateNumericOtp(6);
-  if (process.env.DEV_LOG_OTP === 'true') {
-  console.log(`[DEV OTP] ${normalizedEmail}: ${otp}`);
-}
   const tokenHash = VerificationChallenge.hashToken(otp);
   const expiresAt = new Date(Date.now() + config.otp.expiryMinutes * 60 * 1000);
 
-  await VerificationChallenge.findOneAndUpdate(
+  const challenge = await VerificationChallenge.findOneAndUpdate(
     { email: normalizedEmail, type: 'EMAIL_VERIFICATION' },
     { tokenHash, expiresAt, attempts: 0, used: false, lastSentAt: new Date() },
     { upsert: true, new: true }
   );
 
-if (process.env.DEV_LOG_OTP === 'true') {
+if (config.devLogOtp) {
   console.log(`[DEV OTP] ${normalizedEmail}: ${otp}`);
 } else {
-  await sendOtpEmail(normalizedEmail, otp, existingChallenge.metadata.name || 'Student');
+  try {
+    await sendOtpEmail(normalizedEmail, otp, existingChallenge.metadata.name || 'Student');
+  } catch (error) {
+    await releaseOtpCooldown(challenge);
+    throw error;
+  }
 }
   return { message: 'A new OTP has been sent to your email.' };
 }
