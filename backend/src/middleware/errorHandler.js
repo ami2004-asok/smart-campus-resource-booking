@@ -23,9 +23,14 @@ export function errorHandler(err, req, res, next) {
   }
 
   // Log in development
-  if (config.nodeEnv !== 'production') {
-    console.error('❌ Unhandled error:', err);
-  }
+  // Log unexpected errors for debugging
+console.error('❌ API Error:', {
+  method: req.method,
+  path: req.originalUrl,
+  errorName: err.name,
+  errorMessage: err.message,
+  stack: err.stack,
+});
 
   // Generic fallback — never expose stack traces in production
   res.status(err.statusCode || 500).json({
