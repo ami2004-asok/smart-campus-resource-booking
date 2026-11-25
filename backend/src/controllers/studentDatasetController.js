@@ -169,6 +169,17 @@ export async function addStudent(req, res, next) {
       { upsert: true, new: true, runValidators: true }
     );
 
+    await User.findOneAndUpdate(
+      {
+        studentId: cleanStudentId,
+        email: cleanEmail,
+        departmentId: adminDeptId,
+        role: 'STUDENT',
+        emailVerified: true,
+      },
+      { $set: { accountStatus: 'ACTIVE' } }
+    );
+
     res.status(201).json({
       success: true,
       message: `Student ${cleanStudentId} added to verified eligibility roster`,
