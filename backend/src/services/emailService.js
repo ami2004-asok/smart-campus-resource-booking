@@ -48,6 +48,73 @@ async function getTransporter() {
 }
 
 async function sendMail(options) {
+  const gmailCredentials = {
+    clientId: config.email.gmailClientId,
+    clientSecret: config.email.gmailClientSecret,
+    refreshToken: config.email.gmailRefreshToken,
+  };
+  const hasGmailCredentials = Object.values(gmailCredentials).some(Boolean);
+
+  if (hasGmailCredentials) {
+    const missingCredentials = Object.entries(gmailCredentials)
+      .filter(([, value]) => !value)
+      .map(([name]) => name);
+    if (missingCredentials.length > 0) {
+      throw new Error(`Gmail API configuration is incomplete. Missing: ${missingCredentials.join(', ')}`);
+    }
+
+    console.log('✅ Email: Using Gmail API');
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: gmailCredentials.clientId,
+        client_secret: gmailCredentials.clientSecret,
+        refresh_token: gmailCredentials.refreshToken,
+        grant_type: 'refresh_token',
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const details = await tokenResponse.text();
+      throw new Error(`Gmail API authentication failed (${tokenResponse.status}): ${details}`);
+    }
+
+    const { access_token: accessToken } = await tokenResponse.json();
+    const encodedSubject = Buffer.from(options.subject, 'utf8').toString('base64');
+    const encodedHtml = Buffer.from(options.html, 'utf8')
+      .toString('base64')
+      .replace(/.{1,76}/g, '$&\r\n')
+      .trim();
+    const message = [
+      `From: ${config.email.from}`,
+      `To: ${options.to}`,
+      `Subject: =?UTF-8?B?${encodedSubject}?=`,
+      'MIME-Version: 1.0',
+      'Content-Type: text/html; charset="UTF-8"',
+      'Content-Transfer-Encoding: base64',
+      '',
+      encodedHtml,
+    ].join('\r\n');
+    const raw = Buffer.from(message, 'utf8').toString('base64url');
+
+    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ raw }),
+    });
+
+    if (!response.ok) {
+      const details = await response.text();
+      throw new Error(`Email delivery failed (Gmail API ${response.status}): ${details}`);
+    }
+
+    return response.json();
+  }
+
   if (config.email.resendApiKey) {
     console.log('✅ Email: Using Resend API');
     const response = await fetch('https://api.resend.com/emails', {

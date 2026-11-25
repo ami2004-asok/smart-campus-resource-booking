@@ -1,4 +1,4 @@
-# CampusSync — Smart Campus Resource Booking System
+# CampusSync ï¿½ Smart Campus Resource Booking System
 
 A full-stack web application for CUSAT that allows students to book classrooms, laboratories, equipment, and sports facilities. Features department-based access control, student eligibility verification, and real-time availability tracking.
 
@@ -21,29 +21,29 @@ A full-stack web application for CUSAT that allows students to book classrooms, 
 ```
 resourcebooking/
 +-- backend/          # Express.js REST API
-¦   +-- src/
-¦   ¦   +-- config/       # DB connection, environment variables
-¦   ¦   +-- controllers/  # Route handlers
-¦   ¦   +-- middleware/   # Auth, validation, error handling
-¦   ¦   +-- models/       # Mongoose models
-¦   ¦   +-- routes/       # API route definitions
-¦   ¦   +-- services/     # Business logic (auth, booking, email)
-¦   ¦   +-- validators/   # Joi schemas
-¦   +-- scripts/
-¦   ¦   +-- seedFullDemo.js   # Database seeder
-¦   +-- tests/
-¦   ¦   +-- accessControl.test.js
-¦   +-- .env.example      # Copy this to .env and fill values
-¦   +-- package.json
-¦
+ï¿½   +-- src/
+ï¿½   ï¿½   +-- config/       # DB connection, environment variables
+ï¿½   ï¿½   +-- controllers/  # Route handlers
+ï¿½   ï¿½   +-- middleware/   # Auth, validation, error handling
+ï¿½   ï¿½   +-- models/       # Mongoose models
+ï¿½   ï¿½   +-- routes/       # API route definitions
+ï¿½   ï¿½   +-- services/     # Business logic (auth, booking, email)
+ï¿½   ï¿½   +-- validators/   # Joi schemas
+ï¿½   +-- scripts/
+ï¿½   ï¿½   +-- seedFullDemo.js   # Database seeder
+ï¿½   +-- tests/
+ï¿½   ï¿½   +-- accessControl.test.js
+ï¿½   +-- .env.example      # Copy this to .env and fill values
+ï¿½   +-- package.json
+ï¿½
 +-- frontend/         # React + Vite SPA
-¦   +-- src/
-¦   ¦   +-- components/   # Reusable UI components
-¦   ¦   +-- context/      # Auth context
-¦   ¦   +-- pages/        # Page components (auth, student, admin)
-¦   ¦   +-- services/     # Axios API service layer
-¦   +-- package.json
-¦
+ï¿½   +-- src/
+ï¿½   ï¿½   +-- components/   # Reusable UI components
+ï¿½   ï¿½   +-- context/      # Auth context
+ï¿½   ï¿½   +-- pages/        # Page components (auth, student, admin)
+ï¿½   ï¿½   +-- services/     # Axios API service layer
+ï¿½   +-- package.json
+ï¿½
 +-- .gitignore
 +-- README.md
 ```
@@ -123,14 +123,14 @@ This creates all departments, admin users, sample resources, student eligibility
 
 Open **two terminal windows**:
 
-**Terminal 1 — Backend:**
+**Terminal 1 ï¿½ Backend:**
 ```bash
 cd backend
 npm run dev
 ```
 Server starts at: `http://localhost:5000`
 
-**Terminal 2 — Frontend:**
+**Terminal 2 ï¿½ Frontend:**
 ```bash
 cd frontend
 npm run dev
@@ -164,13 +164,13 @@ App opens at: `http://localhost:5173`
 
 ## Key Features
 
-- **Student Eligibility Verification** — Students can only register if their roll number + email matches the official roster uploaded by the department admin
-- **Auto Department Assignment** — Department is automatically assigned from the roster; students cannot tamper with it
-- **Role-based Access Control** — STUDENT / DEPARTMENT_ADMIN / SPORTS_ADMIN roles with separate dashboards
-- **Resource Access Policies** — ALL_DEPARTMENTS / DEPARTMENT_ONLY / RESTRICTED (specific depts only)
-- **Timetable Conflict Detection** — Bookings are blocked if they overlap with scheduled classes
-- **OTP Email Verification** — Required on registration; real emails via Gmail SMTP
-- **Student Roster Management** — Department admins can add/remove students, upload CSV batches year-wise, toggle eligibility
+- **Student Eligibility Verification** ï¿½ Students can only register if their roll number + email matches the official roster uploaded by the department admin
+- **Auto Department Assignment** ï¿½ Department is automatically assigned from the roster; students cannot tamper with it
+- **Role-based Access Control** ï¿½ STUDENT / DEPARTMENT_ADMIN / SPORTS_ADMIN roles with separate dashboards
+- **Resource Access Policies** ï¿½ ALL_DEPARTMENTS / DEPARTMENT_ONLY / RESTRICTED (specific depts only)
+- **Timetable Conflict Detection** ï¿½ Bookings are blocked if they overlap with scheduled classes
+- **OTP Email Verification** ï¿½ Required on registration; real emails via Gmail SMTP
+- **Student Roster Management** ï¿½ Department admins can add/remove students, upload CSV batches year-wise, toggle eligibility
 
 ---
 
@@ -203,7 +203,10 @@ All variables are in `backend/.env`. Copy from `backend/.env.example`.
 |---|---|---|
 | `MONGODB_URI` | MongoDB Atlas connection string | ? Yes |
 | `JWT_SECRET` | Long random string for signing JWTs | ? Yes |
-| `RESEND_API_KEY` | Resend API key; preferred for hosted deployments | For emails |
+| `GMAIL_CLIENT_ID` | Google OAuth client ID for Gmail API sending | For Gmail API |
+| `GMAIL_CLIENT_SECRET` | Google OAuth client secret | For Gmail API |
+| `GMAIL_REFRESH_TOKEN` | OAuth refresh token with `gmail.send` permission | For Gmail API |
+| `RESEND_API_KEY` | Resend API key for email delivery | For emails |
 | `SMTP_HOST` | SMTP server host (default: smtp.gmail.com) | For emails |
 | `SMTP_PORT` | SMTP port (default: 587) | For emails |
 | `SMTP_USER` | Gmail address | For emails |
@@ -218,6 +221,12 @@ For hosted deployments such as Render, configure `RESEND_API_KEY` and set
 `EMAIL_FROM` to a sender address verified with Resend. The API integration is
 preferred over SMTP, which may be unavailable from some hosting providers. Keep
 the API key in the hosting provider's environment settings; never commit it.
+
+To send through Gmail API instead, configure all three `GMAIL_*` OAuth values
+and set `EMAIL_FROM` to the authorized Gmail account (or a verified Gmail
+send-as alias). Gmail API credentials take precedence over Resend and SMTP.
+Keep the client secret and refresh token private and store them in the hosting
+provider's environment settings.
 
 ---
 
